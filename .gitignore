@@ -1,0 +1,22 @@
+# Ignore python cache files
+__pycache__/
+*.pyc
+
+# Ignore massive datasets and media files
+data/
+datasets/
+*.mp4
+*.avi
+*.mkv
+
+# Ignore heavy deep learning model weights/checkpoints
+*.pt
+*.pth
+*.h5
+*.pb
+weights/
+checkpoints/
+
+# Ignore local virtual environments
+venv/
+.env
