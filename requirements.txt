@@ -19,3 +19,6 @@ psycopg2-binary>=2.9.5
 
 # --- Media Processing Helpers ---
 ffmpeg-python>=0.2.0
+
+# --- Remote/Environment Dev Tooling ---
+python-dotenv>=1.0.0
