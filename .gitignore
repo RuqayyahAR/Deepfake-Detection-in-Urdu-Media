@@ -1,22 +1,27 @@
-# Ignore python cache files
-__pycache__/
-*.pyc
-
-# Ignore massive datasets and media files
-data/
-datasets/
-*.mp4
-*.avi
-*.mkv
-
-# Ignore heavy deep learning model weights/checkpoints
+# 1. Block Deep Learning Weights (Too heavy for GitHub)
+*.caffemodel
+*.prototxt
 *.pt
 *.pth
 *.h5
-*.pb
 weights/
-checkpoints/
+models/
 
-# Ignore local virtual environments
-venv/
+# 2. Block Media & Datasets (Saves bandwidth and space)
+*.mp4
+*.avi
+*.mkv
+data/
+datasets/
+temp_audio.wav
+
+# 3. Block Local Environment & Databases
 .env
+venv/
+.venv
+__pycache__/
+*.pyc
+
+# 4. Block OS-Specific Trash Files
+.DS_Store
+Thumbs.db
