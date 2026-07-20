@@ -149,3 +149,10 @@ STATUS: AUTHENTIC MEDIA ASSET
 ├── requirements.txt        # Python dependencies
 └── README.md
 ```
+
+## Commands to run:
+Install Python 3.10+
+Run pip install -r requirements.txt
+Install FFmpeg on PATH
+Download lid.176.bin (FastText model)
+Run: python main.py --input your_video.mp4
