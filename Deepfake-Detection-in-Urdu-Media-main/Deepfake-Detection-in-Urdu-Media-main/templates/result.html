@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Forensic Report - TRACE{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h2>TRACE Forensic Investigation Report</h2>
+    <p>Language: <strong>{{ language }}</strong>
+       &nbsp;|&nbsp; Source: <strong>{{ source_type }}</strong>
+       {% if source_link %}&nbsp;|&nbsp; Link: <strong>{{ source_link }}</strong>{% endif %}</p>
+    <p>File: <strong>{{ video_name }}</strong></p>
+
+    <!-- Classification banner -->
+    {% set banner_class = classification|lower | replace(' ', '_') %}
+    <div class="result-banner {{ banner_class }}">
+      {{ classification }}
+    </div>
+
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="label">Suspicion Score</div>
+        <div class="value">{{ "%.2f"|format(score * 100) }}%</div>
+        <div class="progress-wrap">
+          <div class="progress-bar" style="width: {{ "%.0f"|format(score * 100) }}%;"></div>
+        </div>
+        <p style="font-size:0.85rem; color:var(--brown); margin-top:0.5rem;">
+          40%+ = likely manipulated &nbsp;|&nbsp; 20-40% = inconclusive &nbsp;|&nbsp; below 20% = likely authentic
+        </p>
+        <p style="font-size:0.8rem; color:var(--brown); margin-top:0.25rem;">
+          <strong>Note:</strong> This is a suspicion score from explainable heuristics,
+          not a calibrated probability from a trained model.
+        </p>
+      </div>
+      <div class="result-item">
+        <div class="label">SHA-256 Hash</div>
+        <div class="value" style="font-size:0.8rem; word-break:break-all;">{{ file_hash }}</div>
+      </div>
+      <div class="result-item">
+        <div class="label">Analysis Mode</div>
+        <div class="value" style="font-size:0.9rem; text-transform:uppercase;">
+          {{ analysis_mode if analysis_mode else 'n/a' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Video metadata -->
+    {% if metadata %}
+    <div class="indicators-box">
+      <h3>Video Metadata</h3>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        {% if metadata.width %}<li>Resolution: {{ metadata.width }}x{{ metadata.height }}</li>{% endif %}
+        {% if metadata.fps %}<li>FPS: {{ metadata.fps }}</li>{% endif %}
+        {% if metadata.total_frames %}<li>Total Frames: {{ metadata.total_frames }}</li>{% endif %}
+        {% if metadata.duration_seconds %}<li>Duration: {{ metadata.duration_seconds }} seconds</li>{% endif %}
+        <li>Frames Analyzed: {{ frames_analyzed if frames_analyzed else 'n/a' }}</li>
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Suspicious timestamps -->
+    {% if suspicious_timestamps %}
+    <div class="indicators-box">
+      <h3>Suspicious Frame Timestamps</h3>
+      <p>The following sampled frames showed the strongest anomalies:</p>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        {% for ts in suspicious_timestamps %}
+          <li>{{ ts }} seconds</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Details -->
+    <div class="details-note">
+      <strong>Technical details:</strong> {{ details }}
+    </div>
+
+    <!-- Indicators -->
+    <div class="indicators-box">
+      <h3>Forensic Indicators Found</h3>
+      {% if indicators %}
+        <ul>
+          {% for ind in indicators %}
+            <li>{{ ind }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No specific indicators were flagged.</p>
+      {% endif %}
+    </div>
+
+    <!-- Limitation disclaimer -->
+    <div class="indicators-box" style="border:2px dashed var(--borders); background:#fafafa;">
+      <h3 style="color:#e65100;">⚠ Important Limitation</h3>
+      <p style="font-size:0.9rem; margin-bottom:0.5rem;">
+        This is an <strong>intermediate student-level detector</strong> that uses visual
+        heuristics (blur, edges, colour, frequency blocks, temporal jitter). It is
+        <strong>not</strong> a professional forensic tool and does not use a trained
+        deep-learning model. A result of "likely authentic" does <strong>not</strong>
+        guarantee the video is real.
+      </p>
+      <p style="font-size:0.9rem;">
+        <strong>To verify:</strong> Compare with the real version found by the AI internet
+        search below, or check the original source on the creator's official channel.
+      </p>
+    </div>
+
+    <!-- AI Internet Search -->
+    <div class="search-box">
+      <h3>AI Internet Search: Is there a real version online?</h3>
+      <p>The app searched the web for the real/original version of this video so you can compare.</p>
+      {% if search_results %}
+        <ul class="search-results">
+          {% for item in search_results %}
+            <li>
+              {% if item.url != "#" %}
+                <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+              {% else %}
+                <strong>{{ item.title }}</strong>
+              {% endif %}
+              <span class="search-note">{{ item.note }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No search results found.</p>
+      {% endif %}
+    </div>
+
+    <!-- Compression Robustness -->
+    <div class="search-box">
+      <h3>Compression Robustness Test</h3>
+      <p>The video was re-encoded under different transformations to check if the result is stable.</p>
+      {% if compression_results %}
+        <table style="width:100%; border-collapse:collapse; margin-top:0.5rem;">
+          <thead>
+            <tr style="background:var(--brown-pale);">
+              <th style="text-align:left; padding:0.5rem; border:1px solid var(--borders);">Transformation</th>
+              <th style="text-align:center; padding:0.5rem; border:1px solid var(--borders);">Score</th>
+              <th style="text-align:left; padding:0.5rem; border:1px solid var(--borders);">Classification</th>
+              <th style="text-align:center; padding:0.5rem; border:1px solid var(--borders);">Indicators</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in compression_results %}
+            <tr>
+              <td style="padding:0.5rem; border:1px solid var(--borders);">{{ r.transformation }}</td>
+              <td style="padding:0.5rem; border:1px solid var(--borders); text-align:center;">
+                {% if r.score is not none %}{{ "%.2f"|format(r.score * 100) }}%{% else %}N/A{% endif %}
+              </td>
+              <td style="padding:0.5rem; border:1px solid var(--borders);">{{ r.classification }}</td>
+              <td style="padding:0.5rem; border:1px solid var(--borders); text-align:center;">{{ r.indicators }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <a href="{{ url_for('upload') }}" class="btn">Test Another Video</a>
+    <a href="{{ url_for('index') }}" class="btn secondary">Home</a>
+  </div>
+{% endblock %}

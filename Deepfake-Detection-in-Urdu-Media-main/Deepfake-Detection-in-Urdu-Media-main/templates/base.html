@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Deepfake Detection{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="{{ url_for('index') }}" class="logo">Deep<span>Fake</span> Detector</a>
+      <nav>
+        <ul>
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('select_language') }}">Choose Language</a></li>
+          <li><a href="{{ url_for('upload') }}">Upload Video</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Student Project - Deepfake Detection in Hindi, Urdu, Telugu & English Media</p>
+    <p style="font-size:0.8rem; margin-top:0.5rem;">Made by 2 intermediate + 1 beginner programming student</p>
+  </footer>
+</body>
+</html>
