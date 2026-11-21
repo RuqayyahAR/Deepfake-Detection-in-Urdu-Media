@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Forensic Report - TRACE{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h2>TRACE Forensic Investigation Report</h2>
+    <p>Language: <strong>{{ language }}</strong>
+       &nbsp;|&nbsp; Source: <strong>{{ source_type }}</strong>
+       {% if source_link %}&nbsp;|&nbsp; Link: <strong>{{ source_link }}</strong>{% endif %}</p>
+    <p>File: <strong>{{ video_name }}</strong></p>
+
+    <!-- Classification banner -->
+    {% set banner_class = classification|lower | replace(' ', '_') %}
+    <div class="result-banner {{ banner_class }}">
+      {% if classification == 'INSUFFICIENT_EVIDENCE' %}
+        INSUFFICIENT EVIDENCE
+      {% else %}
+        {{ classification }}
+      {% endif %}
+    </div>
+
+    <p style="font-size:0.85rem; color:var(--brown); margin-top:0.5rem;">
+      <strong>Classification basis:</strong>
+      {% if classification_basis == 'pretrained_model' %}
+        Pretrained deepfake detection model (primary evidence)
+      {% elif classification_basis == 'forensic_heuristic_only' %}
+        Forensic heuristics only (no pretrained model available)
+      {% else %}
+        No evidence available
+      {% endif %}
+    </p>
+
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="label">Suspicion Score</div>
+        {% if score is not none %}
+          <div class="value">{{ "%.2f"|format(score * 100) }}%</div>
+          <div class="progress-wrap">
+            <div class="progress-bar" style="width: {{ "%.0f"|format(score * 100) }}%;"></div>
+          </div>
+          <p style="font-size:0.85rem; color:var(--brown); margin-top:0.5rem;">
+            40%+ = likely manipulated &nbsp;|&nbsp; 20-40% = inconclusive &nbsp;|&nbsp; below 20% = likely authentic
+          </p>
+        {% else %}
+          <div class="value" style="color:var(--brown);">N/A</div>
+          <p style="font-size:0.85rem; color:var(--brown); margin-top:0.5rem;">
+            No score available - insufficient evidence for analysis.
+          </p>
+        {% endif %}
+        <p style="font-size:0.8rem; color:var(--brown); margin-top:0.25rem;">
+          <strong>Note:</strong> This is a suspicion score, not a calibrated probability.
+          When the pretrained model is available, this reflects the model's score.
+          Otherwise, it reflects forensic heuristic analysis.
+        </p>
+      </div>
+      <div class="result-item">
+        <div class="label">SHA-256 Hash</div>
+        <div class="value" style="font-size:0.8rem; word-break:break-all;">{{ file_hash }}</div>
+      </div>
+      <div class="result-item">
+        <div class="label">Analysis Mode</div>
+        <div class="value" style="font-size:0.9rem; text-transform:uppercase;">
+          {{ analysis_mode if analysis_mode else 'n/a' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Pretrained Model Results (AI predictions, kept separate) -->
+    {% if model_available %}
+    <div class="indicators-box" style="border-left: 4px solid var(--brown-dark);">
+      <h3>🤖 Pretrained Model Prediction</h3>
+      <p style="font-size:0.85rem; color:var(--brown); margin-bottom:0.5rem;">
+        <strong>Label:</strong> {{ model_label }} &nbsp;|&nbsp;
+        <strong>Model Score:</strong>
+        {% if model_score is not none %}{{ "%.2f"|format(model_score * 100) }}%{% else %}N/A{% endif %}
+      </p>
+      {% if model_error %}
+        <p style="font-size:0.8rem; color:#e65100;">Model error: {{ model_error }}</p>
+      {% endif %}
+
+      <!-- Model frame-level results -->
+      {% if model_frames %}
+        <h4 style="margin-top:1rem; margin-bottom:0.5rem; font-size:1rem;">Frame-Level Model Results (top 5)</h4>
+        <table style="width:100%; border-collapse:collapse; margin-top:0.5rem;">
+          <thead>
+            <tr style="background:var(--brown-pale);">
+              <th style="text-align:left; padding:0.5rem; border:1px solid var(--borders);">Time</th>
+              <th style="text-align:center; padding:0.5rem; border:1px solid var(--borders);">Score</th>
+              <th style="text-align:center; padding:0.5rem; border:1px solid var(--borders);">Faces</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mf in model_frames[:5] %}
+            <tr>
+              <td style="padding:0.5rem; border:1px solid var(--borders);">{{ mf.time if mf.time is not none else 'N/A' }}s</td>
+              <td style="padding:0.5rem; border:1px solid var(--borders); text-align:center;">
+                {% if mf.score is not none %}{{ "%.2f"|format(mf.score * 100) }}%{% else %}N/A{% endif %}
+              </td>
+              <td style="padding:0.5rem; border:1px solid var(--borders); text-align:center;">{{ mf.faces if mf.faces is not none else 0 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="indicators-box" style="border-left: 4px solid #9e9e9e;">
+      <h3>🤖 Pretrained Model Prediction</h3>
+      <p style="font-size:0.85rem; color:var(--brown); margin-bottom:0.5rem;">
+        Pretrained model not available.
+        {% if model_error %}
+          <strong>Error:</strong> {{ model_error }}
+        {% else %}
+          Install with: <code>pip install git+https://github.com/CodeRafay/deepfake-detect</code>
+        {% endif %}
+      </p>
+      <p style="font-size:0.8rem; color:var(--brown);">
+        Running forensic heuristic analysis only. Results are less reliable without the AI model.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Video metadata -->
+    {% if metadata %}
+    <div class="indicators-box">
+      <h3>Video Metadata</h3>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        {% if metadata.width %}<li>Resolution: {{ metadata.width }}x{{ metadata.height }}</li>{% endif %}
+        {% if metadata.fps %}<li>FPS: {{ metadata.fps }}</li>{% endif %}
+        {% if metadata.total_frames %}<li>Total Frames: {{ metadata.total_frames }}</li>{% endif %}
+        {% if metadata.duration_seconds %}<li>Duration: {{ metadata.duration_seconds }} seconds</li>{% endif %}
+        {% if frames_analyzed %}<li>Frames Analyzed: {{ frames_analyzed }}</li>{% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Suspicious timestamps -->
+    {% if suspicious_timestamps %}
+    <div class="indicators-box">
+      <h3>Suspicious Frame Timestamps</h3>
+      <p>The following frames showed the strongest anomalies (ranked by model score when available):</p>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        {% for ts in suspicious_timestamps %}
+          <li>{{ ts }} seconds</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Suspicious frame details from model -->
+    {% if suspicious_frame_details %}
+    <div class="indicators-box">
+      <h3>Model Frame Details</h3>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        {% for fd in suspicious_frame_details %}
+          <li>
+            Time: {{ fd.time }}s &nbsp;|&nbsp;
+            Score: {% if fd.score is not none %}{{ "%.2f"|format(fd.score * 100) }}%{% else %}N/A{% endif %} &nbsp;|&nbsp;
+            Faces: {{ fd.faces if fd.faces is not none else 0 }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Details -->
+    <div class="details-note">
+      <strong>Technical details:</strong> {{ details }}
+    </div>
+
+    <!-- Forensic Indicators (supporting evidence, separate from AI) -->
+    <div class="indicators-box">
+      <h3>🔍 Forensic Indicators (Supporting Evidence)</h3>
+      <p style="font-size:0.8rem; color:var(--brown); margin-bottom:0.5rem;">
+        These indicators support the investigation but are NOT combined with the AI score.
+      </p>
+      {% if indicators %}
+        <ul>
+          {% for ind in indicators %}
+            <li>{{ ind }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No specific forensic indicators were flagged.</p>
+      {% endif %}
+    </div>
+
+    <!-- Language check -->
+    {% if lang_info %}
+    <div class="indicators-box">
+      <h3>Spoken Language Check</h3>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        <li>Status: <strong>{{ lang_info.status }}</strong></li>
+        {% if lang_info.detected_language %}<li>Detected Language: {{ lang_info.detected_language }}</li>{% endif %}
+        {% if lang_info.confidence %}<li>Confidence: {{ "%.2f"|format(lang_info.confidence) }}</li>{% endif %}
+        <li>Note: {{ lang_info.note }}</li>
+      </ul>
+      <p style="font-size:0.8rem; color:var(--brown); margin-top:0.25rem;">
+        Language identification is separate from deepfake detection and does not vouch for authenticity.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Limitation disclaimer -->
+    <div class="indicators-box" style="border:2px dashed var(--borders); background:#fafafa;">
+      <h3 style="color:#e65100;">⚠ Important Limitation</h3>
+      <p style="font-size:0.9rem; margin-bottom:0.5rem;">
+        TRACE uses a pretrained deepfake detection model (when available) plus forensic heuristics.
+        It is <strong>not</strong> a professional forensic tool. The model's reported benchmark
+        results (e.g., Celeb-DF v2 AUC 0.914) are the model author's results and are
+        <strong>not guaranteed</strong> on your Hindi/Urdu/Telugu/English videos.
+      </p>
+      <p style="font-size:0.9rem;">
+        <strong>To verify:</strong> Compare with the real version found by the AI internet
+        search below, or check the original source on the creator's official channel.
+      </p>
+    </div>
+
+    <!-- AI Internet Search -->
+    <div class="search-box">
+      <h3>AI Internet Search: Is there a real version online?</h3>
+      <p>The app searched the web for possible reference versions of this video so you can compare.</p>
+      {% if search_results %}
+        <ul class="search-results">
+          {% for item in search_results %}
+            <li>
+              {% if item.url != "#" %}
+                <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+              {% else %}
+                <strong>{{ item.title }}</strong>
+              {% endif %}
+              <span class="search-note">{{ item.note }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No search results found.</p>
+      {% endif %}
+    </div>
+
+    <!-- Compression Robustness -->
+    <div class="search-box">
+      <h3>Compression Robustness Test</h3>
+      <p>The video was re-encoded under different transformations to check if the result is stable.</p>
+      {% if compression_results %}
+        <table style="width:100%; border-collapse:collapse; margin-top:0.5rem;">
+          <thead>
+            <tr style="background:var(--brown-pale);">
+              <th style="text-align:left; padding:0.5rem; border:1px solid var(--borders);">Transformation</th>
+              <th style="text-align:center; padding:0.5rem; border:1px solid var(--borders);">Score</th>
+              <th style="text-align:left; padding:0.5rem; border:1px solid var(--borders);">Classification</th>
+              <th style="text-align:center; padding:0.5rem; border:1px solid var(--borders);">Indicators</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in compression_results %}
+            <tr>
+              <td style="padding:0.5rem; border:1px solid var(--borders);">{{ r.transformation }}</td>
+              <td style="padding:0.5rem; border:1px solid var(--borders); text-align:center;">
+                {% if r.score is not none %}{{ "%.2f"|format(r.score * 100) }}%{% else %}N/A{% endif %}
+              </td>
+              <td style="padding:0.5rem; border:1px solid var(--borders);">{{ r.classification }}</td>
+              <td style="padding:0.5rem; border:1px solid var(--borders); text-align:center;">{{ r.indicators }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <a href="{{ url_for('upload') }}" class="btn">Test Another Video</a>
+    <a href="{{ url_for('index') }}" class="btn secondary">Home</a>
+  </div>
+{% endblock %}

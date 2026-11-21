@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Video{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h2>Step 2: Upload Your Video</h2>
+    <p>Selected language: <strong>{{ language }}</strong></p>
+    <p>Choose <strong>one</strong> of the two options below:</p>
+
+    <div class="upload-box">
+      <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+        <span class="option-label">Option A: Upload from computer</span>
+        <p>Pick a video file (.mp4, .avi, .mov, .mkv, .webm)</p>
+        <div class="file-input">
+          <input type="file" name="video_file" accept="video/*">
+        </div>
+
+        <span class="option-label">Option B: Website link</span>
+        <p>Paste a direct link to a video</p>
+        <input type="text" name="website_link" class="link-input"
+               placeholder="https://youtube.com/shorts/... or https://example.com/video.mp4">
+
+        <div class="btn-group" style="margin-top:1rem;">
+          <button type="submit" class="btn">Analyze Video &rarr;</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="details-note">
+      <strong>Tip:</strong> You only need to fill in ONE option. You can paste a
+      direct video file link (.mp4, .mov, etc.) OR a social media link
+      (YouTube, Instagram, Facebook, TikTok, etc.) — the app handles both.
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <a href="{{ url_for('select_language') }}" class="btn secondary">&larr; Change Language</a>
+    <a href="{{ url_for('index') }}" class="btn secondary">Home</a>
+  </div>
+{% endblock %}

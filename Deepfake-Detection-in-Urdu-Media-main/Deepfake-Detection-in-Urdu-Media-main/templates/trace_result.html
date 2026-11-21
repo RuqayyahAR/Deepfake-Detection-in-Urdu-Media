@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Source Trace Result - TRACE{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h2>Source Trace Result</h2>
+    <p><strong>Suspect:</strong> {{ suspect_name }}
+       &nbsp;|&nbsp; <strong>Reference:</strong> {{ reference_name }}</p>
+
+    {% if not result.found %}
+      <div class="result-banner insufficient_evidence">
+        NO MATCH FOUND
+      </div>
+      <p>The suspect video does not match the reference within the
+         similarity threshold (video distance:
+         {{ result.video_distance }}). This means the suspect is either
+         a different video entirely, or too heavily altered to trace.</p>
+    {% else %}
+      <div class="result-banner likely_authentic">
+        MATCH FOUND
+      </div>
+      <p>The suspect video matches the reference. Video distance:
+         {{ result.video_distance }}, Audio distance:
+         {{ result.audio_distance }}.</p>
+
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="label">Video Offset</div>
+          <div class="value">{{ result.video_offset_seconds }} s</div>
+        </div>
+        <div class="result-item">
+          <div class="label">Audio Offset</div>
+          <div class="value">{{ result.audio_offset_seconds }} s</div>
+        </div>
+        <div class="result-item">
+          <div class="label">Video Distance</div>
+          <div class="value">{{ result.video_distance }}</div>
+        </div>
+        <div class="result-item">
+          <div class="label">Audio Distance</div>
+          <div class="value">{{ result.audio_distance }}</div>
+        </div>
+      </div>
+
+      <!-- Per-second labels -->
+      {% if result.segments %}
+      <div class="indicators-box">
+        <h3>Per-Second Labels</h3>
+        <p>Each second is labelled based on whether video and/or audio
+           match the reference:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+          {% for seg in result.segments %}
+            {% set label_class = seg.label|lower|replace(' ', '_') %}
+            <span class="seg-badge seg-{{ label_class }}">
+              t{{ seg.t }}s: {{ seg.label }}
+            </span>
+          {% endfor %}
+        </div>
+        <table style="width:100%; border-collapse:collapse; margin-top:1rem;
+                      font-size:0.9rem;">
+          <thead>
+            <tr style="background:var(--brown-pale);">
+              <th style="text-align:left; padding:0.5rem;
+                        border:1px solid var(--borders);">Time</th>
+              <th style="text-align:left; padding:0.5rem;
+                        border:1px solid var(--borders);">Label</th>
+              <th style="text-align:center; padding:0.5rem;
+                        border:1px solid var(--borders);">Video Dist</th>
+              <th style="text-align:center; padding:0.5rem;
+                        border:1px solid var(--borders);">Audio Dist</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for seg in result.segments %}
+            <tr>
+              <td style="padding:0.5rem; border:1px solid var(--borders);">
+                {{ seg.t }} s
+              </td>
+              <td style="padding:0.5rem; border:1px solid var(--borders);
+                        font-weight:600;">
+                {{ seg.label }}
+              </td>
+              <td style="padding:0.5rem; border:1px solid var(--borders);
+                        text-align:center;">
+                {{ seg.video_dist }}
+              </td>
+              <td style="padding:0.5rem; border:1px solid var(--borders);
+                        text-align:center;">
+                {{ seg.audio_dist }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    {% endif %}
+
+    <div class="indicators-box" style="border:2px dashed var(--borders);
+                                       background:#fafafa;">
+      <h3 style="color:#e65100;">⚠ What this means</h3>
+      <ul style="list-style:disc inside; margin-bottom:0;">
+        <li><strong>MATCH</strong> segments: the suspect video/audio at that
+            second is consistent with the reference (no detectable alteration).</li>
+        <li><strong>VIDEO_ALTERED</strong> segments: the video content differs
+            from the reference (possible video edit, deepfake face swap, or
+            scene replacement).</li>
+        <li><strong>AUDIO_ALTERED</strong> segments: the audio differs from the
+            reference (possible audio dub, voice swap, or audio edit).</li>
+        <li><strong>BOTH_ALTERED</strong> segments: both video and audio differ.</li>
+      </ul>
+      <p style="font-size:0.85rem; margin-top:0.5rem;">
+        Source tracing is complementary to deepfake detection. A "MATCH"
+        means the video is the same as the reference - it does not prove the
+        reference itself is authentic. Always verify the reference video
+        independently.
+      </p>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <a href="{{ url_for('trace_source') }}" class="btn">Trace Another Video</a>
+    <a href="{{ url_for('index') }}" class="btn secondary">Home</a>
+  </div>
+{% endblock %}
